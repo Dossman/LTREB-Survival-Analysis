@@ -24,6 +24,12 @@ select <- band %>%
 
 select <- as.character(select$SPECIES)
 
+# final=NULL
+# for (i in 2008:2017){
+#   tmp <- df %>% filter(YEAR == i)
+#   x <- length(which(tmp$BAND %in% unique(df[df$YEAR %in% seq(2007,i-1),]$BAND)))
+#   final <- c(final,x)
+# }
 
 df <- band %>% filter(SPECIES %in% select, BNDCREW=="LTREB") %>% 
   group_by(BAND, YEAR) %>% 
@@ -61,7 +67,7 @@ model=crm(df.proc,df.ddl,model.parameters=list(Phi=Phi.spp,p=list(formula=~hab))
 
 
 fit.models=function(){
-  Phi.constant=list(formula=~1)
+  Phi.constant=list(formula=~time)
   p.time=list(formula=~time)
   p.constant=list(formula=~1)
   p.spp=list(formula=~spp)
@@ -91,3 +97,15 @@ ggplot(data=models[[8]]$results$reals$p[,], aes(x=as.integer(time), y=estimate, 
 
 
 
+##
+amre.exp <- lmodel2(log(mass)~log(tarsus), df %>% filter(log(tarsus) > 2.75, log(tarsus) < 2.95))$regression.results[3,3]
+
+amre.tarsus.mean <- mean(df$tarsus, na.rm=T)
+
+# now using the slope along with mean tarsus size to estimate the body condiiton 
+# (scaled mass) of each individual in the original analysis
+
+final <- NULL
+tmp <- df %>% filter(!is.na(tarsus), !is.na(mass)) %>% 
+  mutate(bc = mass*((amre.tarsus.mean/tarsus))^amre.exp) %>% data.frame()
+final <- rbind(final,tmp)
